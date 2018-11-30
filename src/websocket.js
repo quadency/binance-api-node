@@ -262,7 +262,12 @@ const user = opts => cb => {
     w.onmessage = (msg) => (userEventHandler(cb)(msg))
 
     const int = setInterval(() => {
-      keepStreamAlive(keepDataStream, listenKey)()
+      // clearInterval doesn't work sometimes, in which case try clearInterval again if invalid listenKey response
+      try {
+        keepStreamAlive(keepDataStream, listenKey)()
+      } catch(err) {
+        clearInterval(int)
+      }
     }, 50e3)
     keepStreamAlive(keepDataStream, listenKey)()
 
