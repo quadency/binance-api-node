@@ -254,28 +254,35 @@ export const userEventHandler = cb => msg => {
 
 export const keepStreamAlive = (method, listenKey) => () => method({ listenKey })
 
-const user = opts => cb => {
+const user = (opts, disconnectFnMap = {}) => cb => {
   const { getDataStream, keepDataStream, closeDataStream } = httpMethods(opts)
+
+  const createDisconnectFn = (w, int, listenKey) => {
+    const disconnectFn = (options) => {
+      clearInterval(int)
+      closeDataStream({ listenKey })
+      w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
+      delete disconnectFnMap[listenKey]
+    }
+
+    disconnectFnMap[listenKey] = disconnectFn
+    return disconnectFn
+  }
 
   return getDataStream().then(({ listenKey }) => {
     const w = openWebSocket(`${BASE}/${listenKey}`)
     w.onmessage = (msg) => (userEventHandler(cb)(msg))
 
+    if (disconnectFnMap[listenKey]) {
+      return disconnectFnMap[listenKey]
+    }
+
     const int = setInterval(() => {
-      // clearInterval doesn't work sometimes, in which case try clearInterval again if invalid listenKey response
-      try {
-        keepStreamAlive(keepDataStream, listenKey)()
-      } catch(err) {
-        clearInterval(int)
-      }
+      keepStreamAlive(keepDataStream, listenKey)()
     }, 50e3)
     keepStreamAlive(keepDataStream, listenKey)()
 
-    return (options) => {
-      clearInterval(int)
-      closeDataStream({ listenKey })
-      w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
-    }
+    return createDisconnectFn(w, int, listenKey)
   })
 }
 

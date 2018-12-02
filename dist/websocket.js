@@ -336,11 +336,24 @@ var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method,
 };
 
 var user = function user(opts) {
+  var disconnectFnMap = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   return function (cb) {
     var _httpMethods = (0, _http2.default)(opts),
         getDataStream = _httpMethods.getDataStream,
         keepDataStream = _httpMethods.keepDataStream,
         closeDataStream = _httpMethods.closeDataStream;
+
+    var createDisconnectFn = function createDisconnectFn(w, int, listenKey) {
+      var disconnectFn = function disconnectFn(options) {
+        clearInterval(int);
+        closeDataStream({ listenKey: listenKey });
+        w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
+        delete disconnectFnMap[listenKey];
+      };
+
+      disconnectFnMap[listenKey] = disconnectFn;
+      return disconnectFn;
+    };
 
     return getDataStream().then(function (_ref2) {
       var listenKey = _ref2.listenKey;
@@ -350,21 +363,16 @@ var user = function user(opts) {
         return userEventHandler(cb)(msg);
       };
 
+      if (disconnectFnMap[listenKey]) {
+        return disconnectFnMap[listenKey];
+      }
+
       var int = setInterval(function () {
-        // clearInterval doesn't work sometimes, in which case try clearInterval again if invalid listenKey response
-        try {
-          keepStreamAlive(keepDataStream, listenKey)();
-        } catch (err) {
-          clearInterval(int);
-        }
+        keepStreamAlive(keepDataStream, listenKey)();
       }, 50e3);
       keepStreamAlive(keepDataStream, listenKey)();
 
-      return function (options) {
-        clearInterval(int);
-        closeDataStream({ listenKey: listenKey });
-        w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
-      };
+      return createDisconnectFn(w, int, listenKey);
     });
   };
 };
