@@ -268,7 +268,7 @@ const user = opts => cb => {
 
     return (options) => {
       clearInterval(int)
-      closeDataStream({ listenKey })
+      // closeDataStream({ listenKey })
       w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
     }
   })
