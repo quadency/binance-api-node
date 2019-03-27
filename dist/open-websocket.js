@@ -18,7 +18,7 @@ exports.default = function (url) {
   return new _reconnectingWebsocket2.default(url, undefined, {
     connectionTimeout: 4E3,
     constructor: typeof window !== 'undefined' ? WebSocket : _html5Websocket2.default,
-    debug: false,
+    debug: true,
     maxReconnectionDelay: 10E3,
     maxRetries: Infinity,
     minReconnectionDelay: 4E3

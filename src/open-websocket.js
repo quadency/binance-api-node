@@ -5,7 +5,7 @@ export default url => {
   return new ReconnectingWebSocket(url, undefined, {
     connectionTimeout: 4E3,
     constructor: typeof window !== 'undefined' ? WebSocket : Html5WebSocket,
-    debug: false,
+    debug: true,
     maxReconnectionDelay: 10E3,
     maxRetries: Infinity,
     minReconnectionDelay: 4E3,
