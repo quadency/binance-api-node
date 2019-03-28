@@ -254,12 +254,22 @@ export const userEventHandler = cb => msg => {
 
 export const keepStreamAlive = (method, listenKey) => () => method({ listenKey })
 
-const user = opts => cb => {
+const user = opts => (cb, correlationId) => {
   const { getDataStream, keepDataStream, closeDataStream } = httpMethods(opts)
 
   return getDataStream().then(({ listenKey }) => {
     const w = openWebSocket(`${BASE}/${listenKey}`)
     w.onmessage = (msg) => (userEventHandler(cb)(msg))
+
+    w.onclose = (msg) => {
+      // eslint-disable-next-line no-console
+      console.log(`[correlationId=${correlationId} Binance user connection closed:, ${msg}`)
+    }
+
+    w.onerror = (error) => {
+      // eslint-disable-next-line no-console
+      console.log(`[correlationId=${correlationId} Binance user connection error:, ${error}`)
+    }
 
     const int = setInterval(() => {
       keepStreamAlive(keepDataStream, listenKey)()

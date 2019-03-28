@@ -336,7 +336,7 @@ var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method,
 };
 
 var user = function user(opts) {
-  return function (cb) {
+  return function (cb, correlationId) {
     var _httpMethods = (0, _http2.default)(opts),
         getDataStream = _httpMethods.getDataStream,
         keepDataStream = _httpMethods.keepDataStream,
@@ -348,6 +348,16 @@ var user = function user(opts) {
       var w = (0, _openWebsocket2.default)(BASE + '/' + listenKey);
       w.onmessage = function (msg) {
         return userEventHandler(cb)(msg);
+      };
+
+      w.onclose = function (msg) {
+        // eslint-disable-next-line no-console
+        console.log('[correlationId=' + correlationId + ' Binance user connection closed:, ' + msg);
+      };
+
+      w.onerror = function (error) {
+        // eslint-disable-next-line no-console
+        console.log('[correlationId=' + correlationId + ' Binance user connection error:, ' + error);
       };
 
       var int = setInterval(function () {
