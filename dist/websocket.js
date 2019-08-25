@@ -335,6 +335,8 @@ var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method,
   };
 };
 
+var int = -1;
+
 var user = function user(opts) {
   return function (cb, correlationId) {
     var _httpMethods = (0, _http2.default)(opts),
@@ -360,12 +362,15 @@ var user = function user(opts) {
         console.log('[correlationId=' + correlationId + ' Binance user connection error:, ' + error);
       };
 
-      var int = setInterval(function () {
+      int = setInterval(function () {
         try {
           keepStreamAlive(keepDataStream, listenKey)();
         } catch (err) {
           // eslint-disable-next-line no-console
           console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
+          if (int !== -1) {
+            clearInterval(int);
+          }
         }
       }, 50e3);
       keepStreamAlive(keepDataStream, listenKey)();

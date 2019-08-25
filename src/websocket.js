@@ -254,6 +254,8 @@ export const userEventHandler = cb => msg => {
 
 export const keepStreamAlive = (method, listenKey) => () => method({ listenKey })
 
+let int = -1
+
 const user = opts => (cb, correlationId) => {
   const { getDataStream, keepDataStream, closeDataStream } = httpMethods(opts)
 
@@ -271,12 +273,15 @@ const user = opts => (cb, correlationId) => {
       console.log(`[correlationId=${correlationId} Binance user connection error:, ${error}`)
     }
 
-    const int = setInterval(() => {
+    int = setInterval(() => {
       try {
         keepStreamAlive(keepDataStream, listenKey)()
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.log(`[correlationId=${correlationId} listenKey issue: ${err}`);
+        console.log(`[correlationId=${correlationId} listenKey issue: ${err}`)
+        if(int !== -1){
+          clearInterval(int)
+        }
       }
     }, 50e3)
     keepStreamAlive(keepDataStream, listenKey)()
