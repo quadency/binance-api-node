@@ -361,7 +361,12 @@ var user = function user(opts) {
       };
 
       var int = setInterval(function () {
-        keepStreamAlive(keepDataStream, listenKey)();
+        try {
+          keepStreamAlive(keepDataStream, listenKey)();
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
+        }
       }, 50e3);
       keepStreamAlive(keepDataStream, listenKey)();
 
