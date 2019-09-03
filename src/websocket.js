@@ -252,7 +252,14 @@ export const userEventHandler = cb => msg => {
   cb(userTransforms[type] ? userTransforms[type](rest) : { type, ...rest })
 }
 
-export const keepStreamAlive = (method, listenKey) => () => method({ listenKey })
+export const keepStreamAlive = (method, listenKey) => () => {
+  try {
+    method({ listenKey })
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.log('keepStreamAlive error:', err)
+  }
+}
 
 let int = -1
 

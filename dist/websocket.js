@@ -331,7 +331,12 @@ var userEventHandler = function userEventHandler(cb) {
 exports.userEventHandler = userEventHandler;
 var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey) {
   return function () {
-    return method({ listenKey: listenKey });
+    try {
+      method({ listenKey: listenKey });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log('keepStreamAlive error:', err);
+    }
   };
 };
 
