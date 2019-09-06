@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.keepStreamAlive = exports.userEventHandler = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _lodash = require('lodash.zipobject');
@@ -359,12 +361,12 @@ var user = function user(opts) {
 
       w.onclose = function (msg) {
         // eslint-disable-next-line no-console
-        console.log('[correlationId=' + correlationId + ' Binance user connection closed:, ' + msg);
+        console.log('[correlationId=' + correlationId + ' Binance user connection closed: ' + ((typeof msg === 'undefined' ? 'undefined' : _typeof(msg)) === 'object' ? JSON.stringify(msg) : msg));
       };
 
       w.onerror = function (error) {
         // eslint-disable-next-line no-console
-        console.log('[correlationId=' + correlationId + ' Binance user connection error:, ' + error);
+        console.log('[correlationId=' + correlationId + ' Binance user connection error: ' + error);
       };
 
       int = setInterval(function () {
@@ -383,6 +385,8 @@ var user = function user(opts) {
       return function (options) {
         clearInterval(int);
         // closeDataStream({ listenKey })
+        // eslint-disable-next-line no-console
+        console.log('[correlationId=' + correlationId + ' closing binance websocket connection');
         w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
       };
     });

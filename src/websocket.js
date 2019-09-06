@@ -272,12 +272,12 @@ const user = opts => (cb, correlationId) => {
 
     w.onclose = (msg) => {
       // eslint-disable-next-line no-console
-      console.log(`[correlationId=${correlationId} Binance user connection closed:, ${msg}`)
+      console.log(`[correlationId=${correlationId} Binance user connection closed: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`)
     }
 
     w.onerror = (error) => {
       // eslint-disable-next-line no-console
-      console.log(`[correlationId=${correlationId} Binance user connection error:, ${error}`)
+      console.log(`[correlationId=${correlationId} Binance user connection error: ${error}`)
     }
 
     int = setInterval(() => {
@@ -296,6 +296,8 @@ const user = opts => (cb, correlationId) => {
     return (options) => {
       clearInterval(int)
       // closeDataStream({ listenKey })
+      // eslint-disable-next-line no-console
+      console.log(`[correlationId=${correlationId} closing binance websocket connection`)
       w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
     }
   })
