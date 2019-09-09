@@ -7,7 +7,8 @@ exports.keepStreamAlive = exports.userEventHandler = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* eslint-disable no-console */
+
 
 var _lodash = require('lodash.zipobject');
 
@@ -331,12 +332,13 @@ var userEventHandler = function userEventHandler(cb) {
 };
 
 exports.userEventHandler = userEventHandler;
-var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey) {
+var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey, correlationId) {
   return function () {
     try {
+      console.log('[correlationId=' + correlationId + ' Binance, keeping alive listenKey=' + listenKey);
       method({ listenKey: listenKey });
     } catch (err) {
-      // eslint-disable-next-line no-console
+
       console.log('keepStreamAlive error:', err);
     }
   };
@@ -351,42 +353,39 @@ var user = function user(opts) {
         keepDataStream = _httpMethods.keepDataStream,
         closeDataStream = _httpMethods.closeDataStream;
 
+    console.log('[correlationId=' + correlationId + ' Binance, getting listen key to open websocket connection');
     return getDataStream().then(function (_ref2) {
       var listenKey = _ref2.listenKey;
 
+      console.log('[correlationId=' + correlationId + ' Binance, listenKeyReceived listenKey=' + listenKey);
       var w = (0, _openWebsocket2.default)(BASE + '/' + listenKey);
       w.onmessage = function (msg) {
         return userEventHandler(cb)(msg);
       };
 
       w.onclose = function (msg) {
-        // eslint-disable-next-line no-console
         console.log('[correlationId=' + correlationId + ' Binance user connection closed: ' + ((typeof msg === 'undefined' ? 'undefined' : _typeof(msg)) === 'object' ? JSON.stringify(msg) : msg));
       };
 
       w.onerror = function (error) {
-        // eslint-disable-next-line no-console
         console.log('[correlationId=' + correlationId + ' Binance user connection error: ' + error);
       };
 
       int = setInterval(function () {
         try {
-          keepStreamAlive(keepDataStream, listenKey)();
+          keepStreamAlive(keepDataStream, listenKey, correlationId)();
         } catch (err) {
-          // eslint-disable-next-line no-console
           console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
           if (int !== -1) {
             clearInterval(int);
           }
         }
       }, 50e3);
-      keepStreamAlive(keepDataStream, listenKey)();
+      keepStreamAlive(keepDataStream, listenKey, correlationId)();
 
       return function (options) {
         clearInterval(int);
         // closeDataStream({ listenKey })
-        // eslint-disable-next-line no-console
-        console.log('[correlationId=' + correlationId + ' closing binance websocket connection');
         w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
       };
     });

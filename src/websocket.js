@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import zip from 'lodash.zipobject'
 
 import httpMethods from 'http'
@@ -252,11 +253,12 @@ export const userEventHandler = cb => msg => {
   cb(userTransforms[type] ? userTransforms[type](rest) : { type, ...rest })
 }
 
-export const keepStreamAlive = (method, listenKey) => () => {
+export const keepStreamAlive = (method, listenKey, correlationId) => () => {
   try {
+    console.log(`[correlationId=${correlationId} Binance, keeping alive listenKey=${listenKey}`)
     method({ listenKey })
   } catch (err) {
-    // eslint-disable-next-line no-console
+
     console.log('keepStreamAlive error:', err)
   }
 }
@@ -266,38 +268,35 @@ let int = -1
 const user = opts => (cb, correlationId) => {
   const { getDataStream, keepDataStream, closeDataStream } = httpMethods(opts)
 
+  console.log(`[correlationId=${correlationId} Binance, getting listen key to open websocket connection`)
   return getDataStream().then(({ listenKey }) => {
+    console.log(`[correlationId=${correlationId} Binance, listenKeyReceived listenKey=${listenKey}`)
     const w = openWebSocket(`${BASE}/${listenKey}`)
     w.onmessage = (msg) => (userEventHandler(cb)(msg))
 
     w.onclose = (msg) => {
-      // eslint-disable-next-line no-console
       console.log(`[correlationId=${correlationId} Binance user connection closed: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`)
     }
 
     w.onerror = (error) => {
-      // eslint-disable-next-line no-console
       console.log(`[correlationId=${correlationId} Binance user connection error: ${error}`)
     }
 
     int = setInterval(() => {
       try {
-        keepStreamAlive(keepDataStream, listenKey)()
+        keepStreamAlive(keepDataStream, listenKey, correlationId)()
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.log(`[correlationId=${correlationId} listenKey issue: ${err}`)
         if(int !== -1){
           clearInterval(int)
         }
       }
     }, 50e3)
-    keepStreamAlive(keepDataStream, listenKey)()
+    keepStreamAlive(keepDataStream, listenKey, correlationId)()
 
     return (options) => {
       clearInterval(int)
       // closeDataStream({ listenKey })
-      // eslint-disable-next-line no-console
-      console.log(`[correlationId=${correlationId} closing binance websocket connection`)
       w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
     }
   })
