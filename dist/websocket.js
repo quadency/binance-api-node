@@ -373,9 +373,9 @@ var user = function user(opts) {
       };
 
       int = setInterval(function () {
-        console.log('keepStreamAlive interval', listenKey);
-        keepStreamAlive(keepDataStream, 'zzDxxLx1VPpbRz6tw7ywZvgnyqK26SjKzfIkI8T3ZYFwA4ZyeSxTG5A5Mjul', correlationId, int)();
-      }, 1000);
+        console.log('[correlationId=${correlationId} keepStreamAlive interval', listenKey);
+        keepStreamAlive(keepDataStream, listenKey, correlationId, int)();
+      }, 50e3);
       keepStreamAlive(keepDataStream, listenKey, correlationId)();
 
       return function (options) {
