@@ -336,7 +336,7 @@ var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method,
   return function () {
     console.log('[correlationId=' + correlationId + ' Binance, keeping alive listenKey=' + listenKey);
     method({ listenKey: listenKey }).catch(function (err) {
-      console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
+      console.log('[correlationId=' + correlationId + ' listenKey=' + listenKey + ' issue: ' + err);
       if (intervalId !== -1) {
         clearInterval(intervalId);
         console.log('[correlationId=' + correlationId + ' cleared listenKey interval');
