@@ -284,6 +284,7 @@ const user = opts => (cb, correlationId) => {
     }
 
     int = setInterval(() => {
+      console.log('keepStreamAlive interval', listenKey);
       keepStreamAlive(keepDataStream, listenKey, correlationId, int)()
     }, 50e3)
     keepStreamAlive(keepDataStream, listenKey, correlationId)()

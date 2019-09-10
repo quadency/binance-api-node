@@ -373,6 +373,7 @@ var user = function user(opts) {
       };
 
       int = setInterval(function () {
+        console.log('keepStreamAlive interval', listenKey);
         keepStreamAlive(keepDataStream, listenKey, correlationId, int)();
       }, 50e3);
       keepStreamAlive(keepDataStream, listenKey, correlationId)();
