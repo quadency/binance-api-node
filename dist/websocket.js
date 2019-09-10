@@ -332,15 +332,16 @@ var userEventHandler = function userEventHandler(cb) {
 };
 
 exports.userEventHandler = userEventHandler;
-var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey, correlationId) {
+var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey, correlationId, intervalId) {
   return function () {
-    try {
-      console.log('[correlationId=' + correlationId + ' Binance, keeping alive listenKey=' + listenKey);
-      method({ listenKey: listenKey });
-    } catch (err) {
-
-      console.log('keepStreamAlive error:', err);
-    }
+    console.log('[correlationId=' + correlationId + ' Binance, keeping alive listenKey=' + listenKey);
+    method({ listenKey: listenKey }).catch(function (err) {
+      console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
+      if (intervalId !== -1) {
+        clearInterval(intervalId);
+        console.log('[correlationId=' + correlationId + ' cleared listenKey interval');
+      }
+    });
   };
 };
 
@@ -372,14 +373,7 @@ var user = function user(opts) {
       };
 
       int = setInterval(function () {
-        try {
-          keepStreamAlive(keepDataStream, listenKey, correlationId)();
-        } catch (err) {
-          console.log('[correlationId=' + correlationId + ' listenKey issue: ' + err);
-          if (int !== -1) {
-            clearInterval(int);
-          }
-        }
+        keepStreamAlive(keepDataStream, listenKey, correlationId, int)();
       }, 50e3);
       keepStreamAlive(keepDataStream, listenKey, correlationId)();
 

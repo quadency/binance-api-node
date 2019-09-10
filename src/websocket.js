@@ -253,14 +253,15 @@ export const userEventHandler = cb => msg => {
   cb(userTransforms[type] ? userTransforms[type](rest) : { type, ...rest })
 }
 
-export const keepStreamAlive = (method, listenKey, correlationId) => () => {
-  try {
+export const keepStreamAlive = (method, listenKey, correlationId, intervalId) => () => {
     console.log(`[correlationId=${correlationId} Binance, keeping alive listenKey=${listenKey}`)
-    method({ listenKey })
-  } catch (err) {
-
-    console.log('keepStreamAlive error:', err)
-  }
+    method({ listenKey }).catch((err)=>{
+      console.log(`[correlationId=${correlationId} listenKey issue: ${err}`)
+      if(intervalId !== -1) {
+        clearInterval(intervalId)
+        console.log(`[correlationId=${correlationId} cleared listenKey interval`)
+      }
+    })
 }
 
 let int = -1
@@ -283,14 +284,7 @@ const user = opts => (cb, correlationId) => {
     }
 
     int = setInterval(() => {
-      try {
-        keepStreamAlive(keepDataStream, listenKey, correlationId)()
-      } catch (err) {
-        console.log(`[correlationId=${correlationId} listenKey issue: ${err}`)
-        if(int !== -1){
-          clearInterval(int)
-        }
-      }
+      keepStreamAlive(keepDataStream, listenKey, correlationId, int)()
     }, 50e3)
     keepStreamAlive(keepDataStream, listenKey, correlationId)()
 
