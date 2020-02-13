@@ -220,6 +220,7 @@ var aggTrades = function aggTrades(payload) {
 };
 
 exports.default = function (opts) {
+  BASE = opts.BASE_HTTP_URL || BASE;
   var pCall = privateCall(opts);
   var kCall = keyCall(opts);
 
