@@ -388,6 +388,7 @@ var user = function user(opts) {
 };
 
 exports.default = function (opts) {
+  BASE = opts.BASE_WS_URL || BASE;
   return {
     depth: depth,
     partialDepth: partialDepth,

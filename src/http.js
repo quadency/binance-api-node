@@ -3,7 +3,7 @@ import zip from 'lodash.zipobject'
 
 import 'isomorphic-fetch'
 
-const BASE = 'https://api.binance.com'
+let BASE = 'https://api.binance.com'
 
 /**
  * Build query string for uri encoded url based on json object
@@ -198,6 +198,7 @@ const aggTrades = payload =>
   )
 
 export default opts => {
+  BASE = opts.BASE_HTTP_URL || BASE;
   const pCall = privateCall(opts)
   const kCall = keyCall(opts)
 

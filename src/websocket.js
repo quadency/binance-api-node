@@ -4,7 +4,7 @@ import zip from 'lodash.zipobject'
 import httpMethods from 'http'
 import openWebSocket from 'open-websocket'
 
-const BASE = 'wss://stream.binance.com:9443/ws'
+let BASE = 'wss://stream.binance.com:9443/ws'
 
 const depth = (payload, cb) => {
   const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
@@ -297,13 +297,16 @@ const user = opts => (cb, correlationId) => {
   })
 }
 
-export default opts => ({
-  depth,
-  partialDepth,
-  candles,
-  trades,
-  aggTrades,
-  ticker,
-  allTickers,
-  user: user(opts),
-})
+export default opts => {
+  BASE = opts.BASE_WS_URL || BASE;
+  return {
+    depth,
+    partialDepth,
+    candles,
+    trades,
+    aggTrades,
+    ticker,
+    allTickers,
+    user: user(opts),
+  }
+}
