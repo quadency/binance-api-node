@@ -262,6 +262,16 @@ const user = opts => (cb, correlationId) => {
   let activeListenKey
   let intervalId
 
+  let reconnectTimeout = 2000
+
+  const reconnect = () => {
+    setTimeout(() => {
+      console.log(`[correlationId=${correlationId}] Binance, attempting reconnect`)
+      makeStream()
+      reconnectTimeout *= 2
+    }, reconnectTimeout)
+  }
+
   const closeStream = (options) => {
     console.log(`[correlationId=${correlationId}] Binance, closing stream`);
     if (intervalId) {
@@ -278,8 +288,7 @@ const user = opts => (cb, correlationId) => {
       activeListenKey = null
       closeStream()
 
-      console.log(`[correlationId=${correlationId}] Binance, attempting reconnect`)
-      makeStream()
+      reconnect()
     })
   }
 
@@ -288,6 +297,7 @@ const user = opts => (cb, correlationId) => {
     return getDataStream().then(({ listenKey }) => {
       console.log(`[correlationId=${correlationId}] Binance, listenKeyReceived listenKey=${listenKey}`)
       activeListenKey = listenKey
+      reconnectTimeout = 2000
       w = openWebSocket(`${BASE}/${activeListenKey}`)
       w.onmessage = (msg) => (userEventHandler(cb)(msg))
 
@@ -304,6 +314,9 @@ const user = opts => (cb, correlationId) => {
       keepAlive()
 
       return (options) => closeStream(options)
+    }).catch((err) => {
+      console.log(`[correlationId=${correlationId}] Binance, error fetching listenKey: ${err}`)
+      reconnect()
     })
   }
 

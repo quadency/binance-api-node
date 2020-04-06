@@ -346,6 +346,16 @@ var user = function user(opts) {
     var activeListenKey = void 0;
     var intervalId = void 0;
 
+    var reconnectTimeout = 2000;
+
+    var reconnect = function reconnect() {
+      setTimeout(function () {
+        console.log('[correlationId=' + correlationId + '] Binance, attempting reconnect');
+        makeStream();
+        reconnectTimeout *= 2;
+      }, reconnectTimeout);
+    };
+
     var closeStream = function closeStream(options) {
       console.log('[correlationId=' + correlationId + '] Binance, closing stream');
       if (intervalId) {
@@ -362,8 +372,7 @@ var user = function user(opts) {
         activeListenKey = null;
         closeStream();
 
-        console.log('[correlationId=' + correlationId + '] Binance, attempting reconnect');
-        makeStream();
+        reconnect();
       });
     };
 
@@ -374,6 +383,7 @@ var user = function user(opts) {
 
         console.log('[correlationId=' + correlationId + '] Binance, listenKeyReceived listenKey=' + listenKey);
         activeListenKey = listenKey;
+        reconnectTimeout = 2000;
         w = (0, _openWebsocket2.default)(BASE + '/' + activeListenKey);
         w.onmessage = function (msg) {
           return userEventHandler(cb)(msg);
@@ -396,6 +406,9 @@ var user = function user(opts) {
         return function (options) {
           return closeStream(options);
         };
+      }).catch(function (err) {
+        console.log('[correlationId=' + correlationId + '] Binance, error fetching listenKey: ' + err);
+        reconnect();
       });
     };
 
