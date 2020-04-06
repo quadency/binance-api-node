@@ -253,48 +253,61 @@ export const userEventHandler = cb => msg => {
   cb(userTransforms[type] ? userTransforms[type](rest) : { type, ...rest })
 }
 
-export const keepStreamAlive = (method, listenKey, correlationId, intervalId) => () => {
-    console.log(`[correlationId=${correlationId} Binance, keeping alive listenKey=${listenKey}`)
-    method({ listenKey }).catch((err)=>{
-      console.log(`[correlationId=${correlationId} listenKey=${listenKey} issue: ${err}`)
-      if(intervalId !== -1) {
-        clearInterval(intervalId)
-        console.log(`[correlationId=${correlationId} cleared listenKey interval`)
-      }
-    })
-}
-
-let int = -1
+export const keepStreamAlive = (method, listenKey) => method({ listenKey })
 
 const user = opts => (cb, correlationId) => {
-  const { getDataStream, keepDataStream, closeDataStream } = httpMethods(opts)
+  const { getDataStream, keepDataStream } = httpMethods(opts)
 
-  console.log(`[correlationId=${correlationId} Binance, getting listen key to open websocket connection`)
-  return getDataStream().then(({ listenKey }) => {
-    console.log(`[correlationId=${correlationId} Binance, listenKeyReceived listenKey=${listenKey}`)
-    const w = openWebSocket(`${BASE}/${listenKey}`)
-    w.onmessage = (msg) => (userEventHandler(cb)(msg))
+  let w
+  let activeListenKey
+  let intervalId
 
-    w.onclose = (msg) => {
-      console.log(`[correlationId=${correlationId} Binance user connection closed: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`)
+  const closeStream = (options) => {
+    console.log(`[correlationId=${correlationId}] Binance, closing stream`);
+    if (intervalId) {
+      clearInterval(intervalId)
+      intervalId = null
     }
+    w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
+  }
 
-    w.onerror = (error) => {
-      console.log(`[correlationId=${correlationId} Binance user connection error: ${error}`)
-    }
+  const keepAlive = () => {
+    console.log(`[correlationId=${correlationId}] Binance, keeping alive listenKey=${activeListenKey}`)
+    keepStreamAlive(keepDataStream, activeListenKey).catch((err) => {
+      console.log(`[correlationId=${correlationId}] listenKey=${activeListenKey} issue: ${err}`)
+      activeListenKey = null
+      closeStream()
 
-    int = setInterval(() => {
-      console.log('[correlationId=${correlationId} keepStreamAlive interval', listenKey);
-      keepStreamAlive(keepDataStream, listenKey, correlationId, int)()
-    }, 50e3)
-    keepStreamAlive(keepDataStream, listenKey, correlationId)()
+      console.log(`[correlationId=${correlationId}] Binance, attempting reconnect`)
+      makeStream()
+    })
+  }
 
-    return (options) => {
-      clearInterval(int)
-      // closeDataStream({ listenKey })
-      w.close(1000, 'Close handle was called', { keepClosed: true, ...options })
-    }
-  })
+  const makeStream = () => {
+    console.log(`[correlationId=${correlationId}] [BASE_URL=${BASE}] Binance, getting listen key to open websocket connection`)
+    return getDataStream().then(({ listenKey }) => {
+      console.log(`[correlationId=${correlationId}] Binance, listenKeyReceived listenKey=${listenKey}`)
+      activeListenKey = listenKey
+      w = openWebSocket(`${BASE}/${activeListenKey}`)
+      w.onmessage = (msg) => (userEventHandler(cb)(msg))
+
+      w.onclose = (msg) => {
+        console.log(`[correlationId=${correlationId}] Binance user connection closed: ${typeof msg === 'object' ? JSON.stringify(msg) : msg}`)
+      }
+
+      w.onerror = (error) => {
+        // TODO: maybe have an onerror hook to be able to resubscribe externally
+        console.log(`[correlationId=${correlationId}] Binance user connection error: ${error}`)
+      }
+
+      intervalId = setInterval(() => keepAlive(), 30e3)
+      keepAlive()
+
+      return (options) => closeStream(options)
+    })
+  }
+
+  return makeStream()
 }
 
 export default opts => {

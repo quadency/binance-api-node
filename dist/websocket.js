@@ -332,58 +332,74 @@ var userEventHandler = function userEventHandler(cb) {
 };
 
 exports.userEventHandler = userEventHandler;
-var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey, correlationId, intervalId) {
-  return function () {
-    console.log('[correlationId=' + correlationId + ' Binance, keeping alive listenKey=' + listenKey);
-    method({ listenKey: listenKey }).catch(function (err) {
-      console.log('[correlationId=' + correlationId + ' listenKey=' + listenKey + ' issue: ' + err);
-      if (intervalId !== -1) {
-        clearInterval(intervalId);
-        console.log('[correlationId=' + correlationId + ' cleared listenKey interval');
-      }
-    });
-  };
+var keepStreamAlive = exports.keepStreamAlive = function keepStreamAlive(method, listenKey) {
+  return method({ listenKey: listenKey });
 };
-
-var int = -1;
 
 var user = function user(opts) {
   return function (cb, correlationId) {
     var _httpMethods = (0, _http2.default)(opts),
         getDataStream = _httpMethods.getDataStream,
-        keepDataStream = _httpMethods.keepDataStream,
-        closeDataStream = _httpMethods.closeDataStream;
+        keepDataStream = _httpMethods.keepDataStream;
 
-    console.log('[correlationId=' + correlationId + ' Binance, getting listen key to open websocket connection');
-    return getDataStream().then(function (_ref2) {
-      var listenKey = _ref2.listenKey;
+    var w = void 0;
+    var activeListenKey = void 0;
+    var intervalId = void 0;
 
-      console.log('[correlationId=' + correlationId + ' Binance, listenKeyReceived listenKey=' + listenKey);
-      var w = (0, _openWebsocket2.default)(BASE + '/' + listenKey);
-      w.onmessage = function (msg) {
-        return userEventHandler(cb)(msg);
-      };
+    var closeStream = function closeStream(options) {
+      console.log('[correlationId=' + correlationId + '] Binance, closing stream');
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
+    };
 
-      w.onclose = function (msg) {
-        console.log('[correlationId=' + correlationId + ' Binance user connection closed: ' + ((typeof msg === 'undefined' ? 'undefined' : _typeof(msg)) === 'object' ? JSON.stringify(msg) : msg));
-      };
+    var keepAlive = function keepAlive() {
+      console.log('[correlationId=' + correlationId + '] Binance, keeping alive listenKey=' + activeListenKey);
+      keepStreamAlive(keepDataStream, activeListenKey).catch(function (err) {
+        console.log('[correlationId=' + correlationId + '] listenKey=' + activeListenKey + ' issue: ' + err);
+        activeListenKey = null;
+        closeStream();
 
-      w.onerror = function (error) {
-        console.log('[correlationId=' + correlationId + ' Binance user connection error: ' + error);
-      };
+        console.log('[correlationId=' + correlationId + '] Binance, attempting reconnect');
+        makeStream();
+      });
+    };
 
-      int = setInterval(function () {
-        console.log('[correlationId=${correlationId} keepStreamAlive interval', listenKey);
-        keepStreamAlive(keepDataStream, listenKey, correlationId, int)();
-      }, 50e3);
-      keepStreamAlive(keepDataStream, listenKey, correlationId)();
+    var makeStream = function makeStream() {
+      console.log('[correlationId=' + correlationId + '] [BASE_URL=' + BASE + '] Binance, getting listen key to open websocket connection');
+      return getDataStream().then(function (_ref2) {
+        var listenKey = _ref2.listenKey;
 
-      return function (options) {
-        clearInterval(int);
-        // closeDataStream({ listenKey })
-        w.close(1000, 'Close handle was called', _extends({ keepClosed: true }, options));
-      };
-    });
+        console.log('[correlationId=' + correlationId + '] Binance, listenKeyReceived listenKey=' + listenKey);
+        activeListenKey = listenKey;
+        w = (0, _openWebsocket2.default)(BASE + '/' + activeListenKey);
+        w.onmessage = function (msg) {
+          return userEventHandler(cb)(msg);
+        };
+
+        w.onclose = function (msg) {
+          console.log('[correlationId=' + correlationId + '] Binance user connection closed: ' + ((typeof msg === 'undefined' ? 'undefined' : _typeof(msg)) === 'object' ? JSON.stringify(msg) : msg));
+        };
+
+        w.onerror = function (error) {
+          // TODO: maybe have an onerror hook to be able to resubscribe externally
+          console.log('[correlationId=' + correlationId + '] Binance user connection error: ' + error);
+        };
+
+        intervalId = setInterval(function () {
+          return keepAlive();
+        }, 30e3);
+        keepAlive();
+
+        return function (options) {
+          return closeStream(options);
+        };
+      });
+    };
+
+    return makeStream();
   };
 };
 
