@@ -21,7 +21,8 @@ export const candleFields = [
 ]
 
 export default (opts) => {
-  const BASE = opts.BASE_HTTP_URL || DEFAULT_BASE
+  const _base = opts.BASE_HTTP_URL || DEFAULT_BASE
+  const BASE = opts.PROXY_URL ? `${opts.PROXY_URL}${_base}` : _base
 
   /**
    * Build query string for uri encoded url based on json object
