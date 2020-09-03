@@ -26,7 +26,8 @@ var DEFAULT_BASE = 'https://api.binance.com';
 var candleFields = exports.candleFields = ['openTime', 'open', 'high', 'low', 'close', 'volume', 'closeTime', 'quoteVolume', 'trades', 'baseAssetVolume', 'quoteAssetVolume'];
 
 exports.default = function (opts) {
-  var BASE = opts.BASE_HTTP_URL || DEFAULT_BASE;
+  var _base = opts.BASE_HTTP_URL || DEFAULT_BASE;
+  var BASE = opts.PROXY_URL ? '' + opts.PROXY_URL + _base : _base;
 
   /**
    * Build query string for uri encoded url based on json object
