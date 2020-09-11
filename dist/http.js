@@ -115,7 +115,8 @@ exports.default = function (opts) {
       }
 
       return publicCall(path, data, method, {
-        'X-MBX-APIKEY': apiKey
+        'X-MBX-APIKEY': apiKey,
+        'content-type': 'application/x-www-form-urlencoded'
       });
     };
   };
@@ -155,7 +156,7 @@ exports.default = function (opts) {
 
         return sendResult(fetch('' + BASE + (path.includes('/wapi') ? '' : '/api') + path + (noData ? '' : makeQueryString(newData)), {
           method: method,
-          headers: { 'X-MBX-APIKEY': apiKey },
+          headers: { 'X-MBX-APIKEY': apiKey, 'content-type': 'application/x-www-form-urlencoded' },
           json: true
         }));
       });
