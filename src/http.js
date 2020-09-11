@@ -98,6 +98,7 @@ export default (opts) => {
 
     return publicCall(path, data, method, {
       'X-MBX-APIKEY': apiKey,
+      'content-type': 'application/x-www-form-urlencoded',
     })
   }
 
@@ -143,7 +144,7 @@ export default (opts) => {
             : makeQueryString(newData)}`,
           {
             method,
-            headers: { 'X-MBX-APIKEY': apiKey },
+            headers: { 'X-MBX-APIKEY': apiKey, 'content-type': 'application/x-www-form-urlencoded' },
             json: true,
           },
         ),
