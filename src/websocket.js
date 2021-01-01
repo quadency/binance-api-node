@@ -205,16 +205,9 @@ export default (opts) => {
   const trades = (payload, cb) => tradesInternal(payload, 'trade', cb)
 
   const userTransforms = {
-    outboundAccountInfo: m => ({
+    outboundAccountPosition: m => ({
       eventType: 'account',
       eventTime: m.E,
-      makerCommissionRate: m.m,
-      takerCommissionRate: m.t,
-      buyerCommissionRate: m.b,
-      sellerCommissionRate: m.s,
-      canTrade: m.T,
-      canWithdraw: m.W,
-      canDeposit: m.D,
       lastAccountUpdate: m.u,
       balances: m.B.reduce((out, cur) => {
         out[cur.a] = { available: cur.f, locked: cur.l }

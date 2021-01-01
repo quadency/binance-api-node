@@ -272,17 +272,10 @@ exports.default = function (opts) {
   };
 
   var userTransforms = {
-    outboundAccountInfo: function outboundAccountInfo(m) {
+    outboundAccountPosition: function outboundAccountPosition(m) {
       return {
         eventType: 'account',
         eventTime: m.E,
-        makerCommissionRate: m.m,
-        takerCommissionRate: m.t,
-        buyerCommissionRate: m.b,
-        sellerCommissionRate: m.s,
-        canTrade: m.T,
-        canWithdraw: m.W,
-        canDeposit: m.D,
         lastAccountUpdate: m.u,
         balances: m.B.reduce(function (out, cur) {
           out[cur.a] = { available: cur.f, locked: cur.l };
