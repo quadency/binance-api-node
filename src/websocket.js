@@ -307,7 +307,7 @@ export default (opts) => {
           console.log(`[correlationId=${correlationId}] Binance user connection error: ${error}`)
         }
 
-        intervalId = setInterval(() => keepAlive(), 30e3)
+        intervalId = setInterval(() => keepAlive(), 60 * 30 * 1000)
         keepAlive()
 
         return (options) => closeStream(options)

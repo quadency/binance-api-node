@@ -394,7 +394,7 @@ exports.default = function (opts) {
 
           intervalId = setInterval(function () {
             return keepAlive();
-          }, 30e3);
+          }, 60 * 30 * 1000);
           keepAlive();
 
           return function (options) {
